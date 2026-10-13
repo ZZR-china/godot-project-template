@@ -1,0 +1,185 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scenes/main.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/player/player.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/pickup/pickup.tscn" id="3"]
+
+[sub_resource type="RectangleShape2D" id="HorizontalWall"]
+size = Vector2(880, 16)
+
+[sub_resource type="RectangleShape2D" id="VerticalWall"]
+size = Vector2(16, 352)
+
+[sub_resource type="RectangleShape2D" id="BlockShape"]
+size = Vector2(96, 96)
+
+[sub_resource type="Theme" id="Theme"]
+default_font_size = 20
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Floor" type="Polygon2D" parent="."]
+color = Color(0.06, 0.1, 0.15, 1)
+polygon = PackedVector2Array(48, 140, 912, 140, 912, 492, 48, 492)
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="TopWall" type="StaticBody2D" parent="World"]
+position = Vector2(480, 140)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Visual" type="Polygon2D" parent="World/TopWall"]
+color = Color(0.16, 0.24, 0.31, 1)
+polygon = PackedVector2Array(-440.0, -8.0, 440.0, -8.0, 440.0, 8.0, -440.0, 8.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/TopWall"]
+shape = SubResource("HorizontalWall")
+
+[node name="BottomWall" type="StaticBody2D" parent="World"]
+position = Vector2(480, 492)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Visual" type="Polygon2D" parent="World/BottomWall"]
+color = Color(0.16, 0.24, 0.31, 1)
+polygon = PackedVector2Array(-440.0, -8.0, 440.0, -8.0, 440.0, 8.0, -440.0, 8.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/BottomWall"]
+shape = SubResource("HorizontalWall")
+
+[node name="LeftWall" type="StaticBody2D" parent="World"]
+position = Vector2(48, 316)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Visual" type="Polygon2D" parent="World/LeftWall"]
+color = Color(0.16, 0.24, 0.31, 1)
+polygon = PackedVector2Array(-8.0, -176.0, 8.0, -176.0, 8.0, 176.0, -8.0, 176.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/LeftWall"]
+shape = SubResource("VerticalWall")
+
+[node name="RightWall" type="StaticBody2D" parent="World"]
+position = Vector2(912, 316)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Visual" type="Polygon2D" parent="World/RightWall"]
+color = Color(0.16, 0.24, 0.31, 1)
+polygon = PackedVector2Array(-8.0, -176.0, 8.0, -176.0, 8.0, 176.0, -8.0, 176.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/RightWall"]
+shape = SubResource("VerticalWall")
+
+[node name="Block" type="StaticBody2D" parent="World"]
+position = Vector2(460, 280)
+collision_layer = 1
+collision_mask = 2
+
+[node name="Visual" type="Polygon2D" parent="World/Block"]
+color = Color(0.16, 0.24, 0.31, 1)
+polygon = PackedVector2Array(-48.0, -48.0, 48.0, -48.0, 48.0, 48.0, -48.0, 48.0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="World/Block"]
+shape = SubResource("BlockShape")
+
+[node name="Pickups" type="Node2D" parent="."]
+
+[node name="Crystal1" parent="Pickups" instance=ExtResource("3")]
+position = Vector2(260, 220)
+
+[node name="Crystal2" parent="Pickups" instance=ExtResource("3")]
+position = Vector2(720, 210)
+
+[node name="Crystal3" parent="Pickups" instance=ExtResource("3")]
+position = Vector2(360, 420)
+
+[node name="Crystal4" parent="Pickups" instance=ExtResource("3")]
+position = Vector2(820, 410)
+
+[node name="Crystal5" parent="Pickups" instance=ExtResource("3")]
+position = Vector2(620, 310)
+
+[node name="Player" parent="." instance=ExtResource("2")]
+position = Vector2(160, 300)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Root" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme = SubResource("Theme")
+
+[node name="Margin" type="MarginContainer" parent="HUD/Root"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 48.0
+offset_top = 24.0
+offset_right = -48.0
+offset_bottom = 122.0
+grow_horizontal = 2
+mouse_filter = 2
+
+[node name="Header" type="HBoxContainer" parent="HUD/Root/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 32
+mouse_filter = 2
+
+[node name="Text" type="VBoxContainer" parent="HUD/Root/Margin/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="HUD/Root/Margin/Header/Text"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "Codex · 2D 游戏起点"
+
+[node name="Status" type="Label" parent="HUD/Root/Margin/Header/Text"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.68, 0.77, 1)
+theme_override_font_sizes/font_size = 17
+text = "移动、碰撞、收集、反馈。从一个小循环开始。"
+
+[node name="Score" type="Label" parent="HUD/Root/Margin/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.76, 0.31, 1)
+theme_override_font_sizes/font_size = 28
+text = "0 / 5"
+vertical_alignment = 1
+
+[node name="Restart" type="Button" parent="HUD/Root/Margin/Header"]
+layout_mode = 2
+custom_minimum_size = Vector2(112, 44)
+size_flags_vertical = 4
+text = "重新开始"
+
+[node name="Hint" type="Label" parent="HUD/Root"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 48.0
+offset_top = -38.0
+offset_right = -48.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.48, 0.61, 0.71, 1)
+theme_override_font_sizes/font_size = 16
+text = "WASD / 方向键 / 左摇杆移动 · 收集全部晶体 · R / 手柄 Y 重开"
+
+[connection signal="pressed" from="HUD/Root/Margin/Header/Restart" to="." method="restart"]

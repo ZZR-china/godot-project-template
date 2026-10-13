@@ -1,0 +1,40 @@
+# Godot 4 自动生成的缓存与编辑器状态（含导出凭据）
+.godot/
+
+# Godot 3 自动生成的导入缓存与旧版导出配置
+.import/
+export.cfg
+
+# Godot 自动生成的翻译文件
+*.translation
+
+# Godot C# / Mono 构建缓存与本地 IDE 状态
+.mono/
+mono_crash.*.json
+[Bb]in/
+[Oo]bj/
+.vs/
+*.csproj.user
+*.sln.docstates
+
+# 本地构建与导出产物（将导出文件放在这些目录中）
+/build/
+/builds/
+/exports/
+
+# 操作系统生成的文件
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# 编辑器临时文件
+*.swp
+*.swo
+*~
+
+# Python 开发工具的字节码缓存
+__pycache__/
+*.py[cod]
+
+# 保留 project.godot、export_presets.cfg、资源文件及其 .uid / .import 元数据。

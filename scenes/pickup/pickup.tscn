@@ -1,0 +1,24 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/pickup/pickup.gd" id="1"]
+
+[sub_resource type="CircleShape2D" id="PickupShape"]
+radius = 14.0
+
+[node name="Pickup" type="Area2D"]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1")
+
+[node name="Crystal" type="Polygon2D" parent="."]
+color = Color(1, 0.76, 0.31, 1)
+polygon = PackedVector2Array(0, -13, 10, 0, 0, 13, -10, 0)
+
+[node name="Highlight" type="Polygon2D" parent="Crystal"]
+color = Color(1, 0.91, 0.65, 1)
+polygon = PackedVector2Array(0, -8, 5, 0, 0, 6, -5, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("PickupShape")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered" flags=4]

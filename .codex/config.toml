@@ -1,0 +1,5 @@
+# Godot 编辑器需通过 python3 tools/dev.py editor 启动。
+[mcp_servers.godot]
+url = "http://127.0.0.1:9080/mcp"
+startup_timeout_sec = 20
+tool_timeout_sec = 60
