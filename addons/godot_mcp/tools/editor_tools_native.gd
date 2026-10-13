@@ -207,7 +207,7 @@ func _register_run_project(server_core: RefCounted) -> void:
 		"properties": {
 			"scene_path": {
 				"type": "string",
-				"description": "Optional path to a specific scene to run. If not provided, runs the main scene."
+				"description": "Optional path to a specific scene to run. If not provided, runs the current scene, or the main scene if none is open."
 			},
 			"allow_window": {
 				"type": "boolean",
@@ -373,18 +373,18 @@ func _tool_stop_project(params: Dictionary) -> Dictionary:
 
 	editor_interface.stop_playing_scene()
 
-	# Wait for the process to fully exit (up to 5s)
-	var max_wait_ms: int = 5000
-	var wait_interval_ms: int = 200
-	var waited_ms: int = 0
-	while editor_interface.is_playing_scene() and waited_ms < max_wait_ms:
-		OS.delay_msec(wait_interval_ms)
-		waited_ms += wait_interval_ms
+	# 停止标记先于调试连接关闭，等待事件循环完成清理后再允许下一轮启动。
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	var started_ms: int = Time.get_ticks_msec()
+	while editor_interface.is_playing_scene() or _has_active_debugger_session():
+		if Time.get_ticks_msec() - started_ms >= 5000:
+			return {"error": "Project debugger session did not stop within 5 seconds."}
+		await tree.process_frame
 
 	return {
 		"status": "success",
 		"mode": "editor",
-		"stopped_after_ms": waited_ms
+		"stopped_after_ms": Time.get_ticks_msec() - started_ms
 	}
 
 # ============================================================================

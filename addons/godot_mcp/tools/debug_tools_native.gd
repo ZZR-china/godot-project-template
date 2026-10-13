@@ -2757,19 +2757,21 @@ func _tool_await_runtime_condition(params: Dictionary) -> Dictionary:
 		if result.get("status", "") == "success":
 			var last_value: Variant = result.get("value", null)
 			var condition_met: bool = _is_truthy_runtime_value(last_value)
-			return {
-				"status": "success" if condition_met else "failed",
-				"condition_met": condition_met,
-				"last_value": last_value,
-				"refresh_result": result.get("refresh_result", {}),
-				"attempts": attempts,
-				"elapsed_ms": timeout_ms - (deadline_ms - Time.get_ticks_msec())
-			}
+			# 表达式已求值不代表条件已满足，false 时继续等待后续状态变化。
+			if condition_met:
+				return {
+					"status": "success",
+					"condition_met": true,
+					"last_value": last_value,
+					"refresh_result": result.get("refresh_result", {}),
+					"attempts": attempts,
+					"elapsed_ms": timeout_ms - (deadline_ms - Time.get_ticks_msec())
+				}
 		# If still pending or failed, wait before retrying
 		if Time.get_ticks_msec() + poll_interval_ms < deadline_ms:
 			var tree: SceneTree = Engine.get_main_loop() as SceneTree
 			if tree:
-				await tree.process_frame
+				await tree.create_timer(float(poll_interval_ms) / 1000.0).timeout
 			else:
 				OS.delay_msec(poll_interval_ms)
 	

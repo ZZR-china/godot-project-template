@@ -30,7 +30,7 @@ GODOT_BIN=/path/to/Godot python3 tools/dev.py editor
 
 ## 使用 Codex 开发
 
-用 Codex 打开这个仓库。项目技能位于 `.agents/skills/`，MCP 配置位于 `.codex/config.toml`；新安装的技能在下一轮对话中可用。MCP 配置如果没有出现，重新打开项目或重启 Codex。项目需要在 Codex 中被信任，项目级 MCP 配置才会加载。
+用 Codex 打开这个仓库。项目技能位于 `.agents/skills/`，MCP 配置位于 `.codex/config.toml`；技能由 Codex 自动发现，未显示时重新打开项目或重启 Codex。项目需要在 Codex 中被信任，项目级 MCP 配置才会加载。
 
 可以从这样的任务开始：
 
@@ -40,7 +40,7 @@ GODOT_BIN=/path/to/Godot python3 tools/dev.py editor
 
 > 用已有 2D 技能为游戏增加一个暂停菜单，支持键盘和手柄，保持 UI 在编辑器中可见。
 
-Codex 应先确认 Godot 版本和当前 MCP 连接的项目，再按任务读取对应技能，完成最小玩法、运行检查、查看画面。项目边界见 `AGENTS.md`；设计资料从 [文档索引](docs/README.md) 开始，当前玩法见 [游戏设计](docs/design.md)，依赖版本与许可证见 [依赖说明](docs/dependencies.md)。
+Codex 应先确认 Godot 版本和当前 MCP 连接的项目，再按任务读取对应技能，完成最小玩法、运行检查、查看画面。工具配合见 [Codex 开发流程](docs/development.md)，项目边界见 `AGENTS.md`；设计资料从 [文档索引](docs/README.md) 开始，当前玩法见 [游戏设计](docs/design.md)，依赖版本与许可证见 [依赖说明](docs/dependencies.md)。
 
 ## 检查与截图
 
@@ -57,18 +57,18 @@ python3 tools/dev.py capture --output /tmp/game-preview.png
 # 确认 MCP 能读取当前项目
 python3 tools/dev.py mcp
 
-# MCP 插件启动逻辑的回归检查，需要图形环境和空闲的 9080 端口
+# 开发工具与 MCP 联调回归，需要图形环境，使用独立端口
 python3 tests/test_mcp_run_project.py
 ```
 
-`check` 检查启动、移动、墙体碰撞、收集、完成反馈与重开。Godot 的退出码有时无法反映脚本错误，因此开发入口同时检查引擎错误输出，并为非交互检查设置超时。截图需要图形环境；命令行行为检查不验证美术、布局或操作手感。
+`check` 检查启动、移动、墙体碰撞、收集、完成反馈与重开，可以在当前编辑器在线时执行；MCP 编辑的场景需先保存。`run` 和 `capture` 会先导入项目，支持无缓存副本首次使用。Godot 的退出码有时无法反映脚本错误，因此开发入口同时检查引擎错误输出，并为非交互检查设置超时。截图需要图形环境；命令行行为检查不验证美术、布局或操作手感。
 
 ## MCP 的使用方式
 
 已安装 [Godot-MCP-Native v1.0.8](https://github.com/yurineko73/Godot-MCP-Native/releases/tag/v1.0.8)，无需额外 Node/Python 服务。通过 `python3 tools/dev.py editor` 启动时，插件提供 `http://127.0.0.1:9080/mcp`，Codex 可以检查场景、修改节点与脚本、运行项目、读取日志和截图。
 
 - 直接双击 `project.godot` 打开时，在 MCP 插件面板中点击启动；插件上游默认不开启自动启动。
-- 9080 被其他项目占用时，先关闭那个项目的 MCP，或同时修改启动命令中的 `--mcp-port`、`.codex/config.toml` 的 URL 和 `tools/dev.py` 的 `MCP_URL`。操作前始终确认项目路径。
+- 9080 被其他项目占用时，先关闭那个项目的 MCP，或同步修改 `.codex/config.toml` 的 URL 和 `tools/dev.py` 的 `MCP_URL`。开发入口从 URL 取得端口，并显式选择 HTTP 传输。操作前始终确认项目路径。
 - 插件使用本地用户数据保存面板配置。开启编辑器时会注册 `MCPRuntimeProbe` 自动加载项，用于运行时调试；正常关闭插件时会移除。它是开发工具，交付游戏前应停用插件并检查导出内容。
 - 当前会话不会因为修改配置就立即获得新的 MCP 工具。重新加载 Codex 后连接，或先用 `python3 tools/dev.py mcp` 验证服务。
 - 模板默认启用 30 个核心工具和 8 个画面／运行检查工具。运行和切换编辑器场景时，按工具 schema 传入 `allow_window=true` 或 `allow_ui_focus=true`；上游默认保留编辑器焦点，不擅自弹窗。
@@ -90,6 +90,7 @@ docs/
   design.md                     核心玩法、范围与验收
   art_direction.md              视觉约定
   narrative/README.md           剧情设计的组织与使用方式
+  development.md                技能、MCP 和开发命令的配合
   dependencies.md               工具来源、版本和补丁
 tests/test_game.gd              核心行为测试
 tools/dev.py                    编辑器、运行、检查、截图和 MCP 诊断入口

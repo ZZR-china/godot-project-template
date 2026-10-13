@@ -104,7 +104,7 @@ func _tool_get_project_info(params: Dictionary) -> Dictionary:
 	
 	var project_path: String = ProjectSettings.globalize_path("res://")
 	var godot_version: Dictionary = Engine.get_version_info()
-	var version_str: String = "%d.%d.%s" % [godot_version.get("major", 0), godot_version.get("minor", 0), godot_version.get("status", "")]
+	var version_str: String = godot_version["string"]
 	
 	return {
 		"project_name": project_name,

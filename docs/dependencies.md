@@ -43,7 +43,7 @@
 
 模板默认工具：启动成功后，在上游 30 个核心工具之外启用 `get_class_api_metadata`、`get_scene_structure`、`get_editor_screenshot`、`get_runtime_scene_tree`、`inspect_runtime_node`、`simulate_runtime_input_event`、`get_runtime_screenshot`、`await_runtime_condition`，用于 API 查询、场景检查、输入和画面验证。其他高级工具仍按需启用。
 
-开发命令通过 `--mcp-server --mcp-port 9080` 启动插件；保持上游默认的本地访问设置。插件临时注册的 `MCPRuntimeProbe` 用于运行时调试；游戏交付前需停用插件并检查导出。
+开发命令通过 `--mcp-server --mcp-transport=http --mcp-port=9080` 启动插件；端口来自 `tools/dev.py` 的 `MCP_URL`。保持上游默认的本地访问设置。插件临时注册的 `MCPRuntimeProbe` 用于运行时调试；游戏交付前需停用插件并检查导出。
 
 ### 运行工具的本地补丁
 
@@ -53,9 +53,25 @@ HTTP MCP 请求来自 Godot 的延迟消息队列。直接调用编辑器的场�
 
 启动前同时调用调试桥已有的 `reset_probe_ready()`，清除上一轮运行留下的就绪标记，避免连续运行时将旧探针当作本轮启动完成。保留原有的调试会话与探针等待，以及场景不存在、项目已经运行时的错误返回。
 
+`_tool_stop_project()` 通过事件循环等待运行标记与调试会话均结束，超时返回错误。调用方不需要在停止与下次启动之间添加固定延时。
+
 调用方式：先通过 `get_project_info` 确认项目路径，再调用 `run_project`，参数为 `{"allow_window": true}`；指定场景时增加 `"scene_path": "res://game/main/main.tscn"`。省略场景路径时优先运行当前场景，没有打开场景时运行主场景。使用运行时调试工具前确认返回的 `session_active` 和 `probe_ready`；结束时调用 `stop_project`。截图参数使用 `save_path`，例如 `res://.godot/preview.png`。
 
-回归入口为 `python3 tests/test_mcp_run_project.py`，需要图形环境和空闲的 9080 端口。脚本复制不含缓存的临时项目，使用独立项目名隔离插件用户配置，直接调用 MCP，并检查编辑器输出；任何 `ERROR:` 或 `SCRIPT ERROR:` 都会使检查失败。截图检查使用独立路径并拒绝过期缓存。主场景截图保存到当前仓库的 `.godot/mcp-run-project-preview.png`，临时项目在结束后删除。
+### 模板联调补丁
+
+以下修改保留固定的上游版本与许可证，更新插件时需一并核对：
+
+| 文件 | 本地修改与原因 |
+|---|---|
+| `mcp_server_native.gd` | 普通无界面检查不初始化或注销 MCP，防止资源导入移除在线编辑器的探针；显式传入 `--mcp-server` 的无界面服务仍可使用。注册探针后保存配置，保证空编辑器首次运行主场景也能调试。 |
+| `ui/mcp_panel_native.gd` | 端口显示使用不发信号的赋值，防止面板刷新误改运行中的端口；STDIO／HTTP 选项与保存配置的索引一致，支持显式 HTTP 启动覆盖遗留 STDIO 设置。 |
+| `tools/scene_tools_native.gd` | 创建场景时根节点不将自己设为 `owner`，避免 Godot 报错。子节点仍使用正常归属规则。 |
+| `tools/project_tools_native.gd` | `get_project_info` 返回实际引擎版本字符串，包含补丁版本，便于选择正确 API。 |
+| `tools/debug_tools_native.gd` | `await_runtime_condition` 遇到假值继续轮询，按轮询间隔等待，条件满足或超时才结束；避免输入刚注入就把尚未发生的状态变化判为失败。 |
+
+开发入口也做了配合调整：`run` 和 `capture` 先导入项目；编辑器端口从 `MCP_URL` 读取，使用上游接受的 `--mcp-port=N` 参数并显式指定 HTTP；离线诊断提示先启动编辑器。更换端口时同步修改 `.codex/config.toml` 的 URL。
+
+回归入口为 `python3 tests/test_mcp_run_project.py`，需要图形环境。脚本复制不含缓存的临时项目，使用独立项目名和自动选择的本地端口，验证开发命令与真实 MCP；不占用开发项目的 9080 服务。任何 `ERROR:` 或 `SCRIPT ERROR:` 都会使检查失败，截图拒绝过期缓存。主场景截图保存到当前仓库的 `.godot/mcp-run-project-preview.png`，临时项目结束后删除。技能选择与完整操作顺序见 [Codex 开发流程](development.md)。
 
 ## 更新
 
@@ -81,10 +97,11 @@ python3 tools/dev.py capture
 - MCP 启动游戏后，模拟 D 键使玩家 x 从 160 移动至 280，模拟 R 键使其恢复至 160；运行时截图已生成并人工检查。
 - 编辑器关闭后没有引擎资源残留错误，`project.godot` 不保留运行探针自动加载项。
 
-当前目录与启动补丁复验：
+模板联调审查：
 
-- 主场景为 `res://game/main/main.tscn`；角色和收集物移入 `game/` 对应功能目录，保留原有脚本 UID。
-- 当前工作区和不包含 `.godot/` 的副本均通过资源导入与 9 项行为检查。
-- 主场景回退、当前场景和指定角色场景均通过直接 `run_project` 启动、重复启动拒绝与停止检查；当前场景和指定场景均通过新探针与非过期截图检查。
-- 不存在的场景返回明确错误，编辑器保持未运行状态；编辑器退出码为 0，日志无引擎错误，运行探针自动加载项已移除。
-- 在临时副本中移除帧等待后，相同回归检查捕获到原始进度对话框错误并失败，确认检查能够识别此次问题。
+- 8 个技能的名称、描述和文件引用有效；上游提及但未安装的专项已在开发流程中说明。Codex CLI 正确读取项目级 HTTP MCP 配置。
+- 无缓存副本直接截图通过；编辑器在线时，命令行资源导入和 9 项行为检查通过，探针配置保留。
+- 遗留 STDIO 配置下，开发入口可在独立端口建立 HTTP MCP，命令行诊断确认连接到临时项目；实际引擎版本和角色 API 查询正常。
+- 通过 MCP 修改角色脚本，在运行时确认新参数；创建节点、保存场景和创建新场景均通过。
+- 主场景回退、当前场景和指定角色场景均通过新探针、非过期截图、重复启动拒绝、停止与连续启动检查。不存在的场景返回明确错误。
+- 输入模拟后，条件等待能观察到角色移动；永不满足的条件返回超时错误。编辑器退出码为 0，日志无引擎错误，运行探针自动加载项已移除。

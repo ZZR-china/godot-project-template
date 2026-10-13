@@ -38,13 +38,15 @@
 ## Codex 与 Godot 2D 开发
 - 本仓库是 Godot 4.7 / GDScript 的 2D 游戏起点。先阅读 `README.md` 和 `docs/README.md`，再阅读当前任务相关的设计文档，从一个可玩的核心循环开始。
 - `.agents/skills/` 包含项目级技能。按当前任务读取对应 `SKILL.md`，不一次加载全部技能。脚本用 `godot-gdscript`；场景用 `godot-nodes-scenes`；移动、物理、信号、UI、动画和测试分别使用同名专项。
+- 技能选择和工具配合见 `docs/development.md`。上游技能提及的其他专项不代表本仓库已安装；示例路径按本项目的 `game/`、`assets/` 约定调整。
 - 保留 `.tscn` 中可直接在编辑器查看的场景和 UI；优先使用 `CharacterBody2D`、`Area2D`、信号和少量明确的状态。不要为新原型预先添加全局事件总线、对象池或通用游戏框架。
 - 用 `python3 tools/dev.py editor` 启动编辑器和项目 MCP。MCP 连接后先调用 `get_project_info`，确认 `project_path` 是当前仓库，再操作场景或运行游戏；不可操作同一端口上的其他项目。
 - MCP 不在线时先运行 `python3 tools/dev.py mcp` 诊断。文件编辑和命令行验证可以继续；报告实际使用的路径，不把静态检查说成运行或视觉验证。
 - 通过 `run_project` 运行游戏，传入 `allow_window=true`；指定场景时再传 `scene_path`，省略时运行当前场景，没有打开场景时运行主场景。插件内部处理启动时机，不需要额外的编辑器脚本。读取运行时数据前确认 `session_active` 和 `probe_ready`，并检查编辑器错误日志。
 - 修改游戏行为后运行 `python3 tools/dev.py check`。修改布局、素材或动画后，运行游戏并通过 MCP 截图或 `python3 tools/dev.py capture` 检查画面。测试覆盖当前核心行为和关键失败路径。
 - `addons/godot_mcp/` 是固定版本的第三方工具，`.agents/skills/` 是第三方技能；更新需保留许可证并同步 `docs/dependencies.md`，日常功能开发不修改上游代码。项目约定优先于上游示例里的通用建议。
-- 修改 MCP 启动逻辑或更新插件后，关闭占用 9080 的 MCP 编辑器，再运行 `python3 tests/test_mcp_run_project.py`；该检查会启动临时项目，验证真实调用、运行画面、错误返回和编辑器日志，需要图形环境。
+- MCP 编辑场景后先调用 `save_scene`，命令行检查只读取已保存文件。截图结果带 `stale` 标记时不能作为当前画面的验证依据。
+- 修改开发工具、MCP 集成或更新插件后运行 `python3 tests/test_mcp_run_project.py`；该检查使用临时项目和独立端口，不需要关闭当前编辑器，需要图形环境。
 - 主场景是 `game/main/main.tscn`。示例玩法仅用于验证模板，可替换；开发入口、技能、MCP 和第三方许可证可保留。
 
 ## 目录与内容归属

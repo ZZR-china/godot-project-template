@@ -8,6 +8,7 @@
 | [视觉约定](art_direction.md) | 当前占位画面和正式素材的制作要求 | 修改画面、UI、动画或接入素材 |
 | [剧情设计](narrative/README.md) | 世界观、人物与剧情的组织方式 | 增加剧情、对话或任务 |
 | [依赖说明](dependencies.md) | Godot、技能、MCP 的版本与本地补丁 | 配置环境或更新工具 |
+| [Codex 开发流程](development.md) | 技能选择、MCP 编辑、命令行检查与运行验证的配合 | 开始开发或修改开发工具 |
 | [素材记录](../assets/credits.md) | 素材来源、作者和使用许可 | 引入或替换外部素材 |
 
 运行方式与目录导航见根 [README.md](../README.md)，Codex 的开发约定见 [AGENTS.md](../AGENTS.md)。开始任务时先阅读相关设计，不要求一次读完所有资料。

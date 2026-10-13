@@ -102,6 +102,7 @@ var _editor_interface: EditorInterface = null
 var _mcp_server_mode: bool = false
 var _tool_instances: Dictionary = {}
 var _debugger_bridge: MCPDebuggerBridge = null
+var _headless_check: bool = DisplayServer.get_name() == "headless" and "--mcp-server" not in OS.get_cmdline_user_args()
 
 const TOOL_SCRIPT_PATHS: Dictionary = {
 	"NodeToolsNative": "res://addons/godot_mcp/tools/node_tools_native.gd",
@@ -117,6 +118,9 @@ const TOOL_SCRIPT_PATHS: Dictionary = {
 # ============================================================================
 
 func _enter_tree() -> void:
+	# 资源导入不需要 MCP，也不能改动正在运行的编辑器所保存的探针配置。
+	if _headless_check:
+		return
 	_log_info("Godot Native MCP Plugin entering tree...")
 
 	# Load persisted config (mcp_settings.cfg) onto the exported properties
@@ -227,6 +231,8 @@ func _enter_tree() -> void:
 	_log_info("Godot Native MCP Plugin initialized")
 
 func _exit_tree() -> void:
+	if _headless_check:
+		return
 	_log_info("Godot Native MCP Plugin exiting tree...")
 	
 	if _native_server and _native_server.is_running():
@@ -253,6 +259,8 @@ func _exit_tree() -> void:
 	_log_info("Godot Native MCP Plugin shutdown complete")
 
 func _disable_plugin() -> void:
+	if _headless_check:
+		return
 	_remove_runtime_probe_autoload()
 
 
@@ -546,6 +554,8 @@ func _ensure_runtime_probe_autoload() -> void:
 			)
 		return
 	add_autoload_singleton(RUNTIME_PROBE_AUTOLOAD_NAME, RUNTIME_PROBE_SCRIPT_PATH)
+	# 没有打开场景时启动主场景也要能从磁盘配置加载运行探针。
+	ProjectSettings.save()
 	_log_info("MCPRuntimeProbe autoload registered")
 
 func _remove_runtime_probe_autoload() -> void:

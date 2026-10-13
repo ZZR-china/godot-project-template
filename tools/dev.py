@@ -9,6 +9,8 @@ import re
 import shutil
 import subprocess
 import tempfile
+import urllib.error
+import urllib.parse
 import urllib.request
 
 
@@ -82,6 +84,17 @@ def check_mcp():
     print(json.dumps(info, ensure_ascii=False, indent=2))
 
 
+def import_project(binary):
+    checked_run(binary, ["--headless", "--editor", "--import"], 120)
+
+
+def editor_arguments():
+    port = urllib.parse.urlsplit(MCP_URL).port
+    if port is None:
+        raise ValueError("MCP_URL 必须包含明确的本地端口。")
+    return ["--editor", "--", "--mcp-server", "--mcp-transport=http", "--mcp-port=" + str(port)]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=["editor", "run", "check", "capture", "mcp"])
@@ -89,18 +102,26 @@ def main():
                         help="截图路径，默认 .godot/preview.png")
     args = parser.parse_args()
     if args.command == "mcp":
-        check_mcp()
+        try:
+            check_mcp()
+        except urllib.error.URLError as error:
+            raise RuntimeError("无法连接 Godot MCP；请先运行 python3 tools/dev.py editor。地址：" + MCP_URL) from error
         return
     binary = godot_binary()
     if args.command == "check":
-        checked_run(binary, ["--headless", "--editor", "--import"], 120)
+        import_project(binary)
         checked_run(binary, ["--headless", "--script", "res://tests/test_game.gd"], 30)
     elif args.command == "capture":
+        import_project(binary)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         checked_run(binary, ["--script", "res://tools/capture.gd", "--", str(args.output.resolve())], 30)
         print("截图已保存：", args.output.resolve())
     else:
-        arguments = ["--editor", "--", "--mcp-server", "--mcp-port", "9080"] if args.command == "editor" else []
+        if args.command == "editor":
+            arguments = editor_arguments()
+        else:
+            import_project(binary)
+            arguments = []
         subprocess.run([binary, "--path", str(ROOT)] + arguments, cwd=ROOT, check=True)
 
 

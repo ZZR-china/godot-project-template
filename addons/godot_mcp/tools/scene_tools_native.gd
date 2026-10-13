@@ -149,8 +149,7 @@ func _tool_create_scene(params: Dictionary) -> Dictionary:
 	# 创建PackedScene
 	var packed_scene: PackedScene = PackedScene.new()
 	
-	# 设置owner并打�?
-	root_node.owner = root_node  # 临时设置
+	# 场景根节点没有 owner，只有需要保存的子节点才归属于根节点。
 	packed_scene.pack(root_node)
 	
 	# 保存场景

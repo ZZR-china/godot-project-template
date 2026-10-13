@@ -198,6 +198,7 @@ func _create_settings_tab() -> VBoxContainer:
 	transport_hbox.add_child(_transport_mode_label)
 
 	_transport_mode_option = OptionButton.new()
+	_transport_mode_option.add_item("stdio", 0)
 	_transport_mode_option.add_item("http", 1)
 	_transport_mode_option.item_selected.connect(_on_transport_mode_selected)
 	transport_hbox.add_child(_transport_mode_option)
@@ -430,7 +431,8 @@ func _update_ui_state() -> void:
 			_http_config_container.visible = (mode == "http")
 
 		if _http_port_spin:
-			_http_port_spin.value = _plugin.http_port if _plugin.get("http_port") != null else 9080
+			# 面板刷新只同步显示，不能触发运行中服务器的端口修改与配置保存。
+			_http_port_spin.set_value_no_signal(_plugin.http_port if _plugin.get("http_port") != null else 9080)
 
 		if _auth_enabled_check:
 			_auth_enabled_check.button_pressed = _plugin.auth_enabled if _plugin.get("auth_enabled") != null else false
@@ -772,7 +774,7 @@ func _load_settings() -> void:
 	if not _settings_manager:
 		return
 	var s: Dictionary = _settings_manager.load_settings()
-	_transport_mode_option.select(0 if s.transport_mode == "http" else 1)
+	_transport_mode_option.select(0 if s.transport_mode == "stdio" else 1)
 	_http_port_spin.value = s.http_port
 	_auth_enabled_check.button_pressed = s.auth_enabled
 	_auth_token_edit.text = s.auth_token
