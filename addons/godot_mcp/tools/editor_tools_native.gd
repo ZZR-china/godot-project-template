@@ -257,10 +257,18 @@ func _tool_run_project(params: Dictionary) -> Dictionary:
 
 	var scene_path: String = params.get("scene_path", "")
 	var played_scene: String = ""
+	if not scene_path.is_empty() and not FileAccess.file_exists(scene_path):
+		return {"error": "Scene file not found: " + scene_path}
+
+	# HTTP 请求来自延迟消息；等待下一帧，让编辑器在消息队列刷新结束后启动场景。
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	await tree.process_frame
+	# 调试会话会复用，不能把上一轮的探针状态当作本次启动完成。
+	var bridge: RefCounted = _get_debugger_bridge()
+	if bridge:
+		bridge.reset_probe_ready()
 
 	if not scene_path.is_empty():
-		if not FileAccess.file_exists(scene_path):
-			return {"error": "Scene file not found: " + scene_path}
 		played_scene = scene_path
 		editor_interface.play_custom_scene(scene_path)
 	else:
@@ -275,7 +283,6 @@ func _tool_run_project(params: Dictionary) -> Dictionary:
 	# Verify the play actually launched a debuggable child. Without this guard a
 	# failed play (e.g. application/run/main_scene pointing at a missing file)
 	# reports a fake success and leaves callers stuck retrying runtime tools (#172).
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	var connected: bool = false
 	var connect_deadline: int = Time.get_ticks_msec() + 5000
 	while Time.get_ticks_msec() < connect_deadline:
@@ -295,7 +302,6 @@ func _tool_run_project(params: Dictionary) -> Dictionary:
 
 	# Give the runtime probe a brief window to signal ready so callers can use
 	# runtime tools (scene tree, screenshot, expression eval) right away.
-	var bridge: RefCounted = _get_debugger_bridge()
 	var probe_ready: bool = bridge.is_probe_ready() if bridge else false
 	var probe_deadline: int = Time.get_ticks_msec() + 2000
 	while not probe_ready and tree and Time.get_ticks_msec() < probe_deadline:

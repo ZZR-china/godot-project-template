@@ -56,6 +56,9 @@ python3 tools/dev.py capture --output /tmp/game-preview.png
 
 # 确认 MCP 能读取当前项目
 python3 tools/dev.py mcp
+
+# MCP 插件启动逻辑的回归检查，需要图形环境和空闲的 9080 端口
+python3 tests/test_mcp_run_project.py
 ```
 
 `check` 检查启动、移动、墙体碰撞、收集、完成反馈与重开。Godot 的退出码有时无法反映脚本错误，因此开发入口同时检查引擎错误输出，并为非交互检查设置超时。截图需要图形环境；命令行行为检查不验证美术、布局或操作手感。
@@ -69,7 +72,7 @@ python3 tools/dev.py mcp
 - 插件使用本地用户数据保存面板配置。开启编辑器时会注册 `MCPRuntimeProbe` 自动加载项，用于运行时调试；正常关闭插件时会移除。它是开发工具，交付游戏前应停用插件并检查导出内容。
 - 当前会话不会因为修改配置就立即获得新的 MCP 工具。重新加载 Codex 后连接，或先用 `python3 tools/dev.py mcp` 验证服务。
 - 模板默认启用 30 个核心工具和 8 个画面／运行检查工具。运行和切换编辑器场景时，按工具 schema 传入 `allow_window=true` 或 `allow_ui_focus=true`；上游默认保留编辑器焦点，不擅自弹窗。
-- Godot 4.7.2 下，上游 `run_project` 会触发编辑器进度对话框错误。可使用 F5、`python3 tools/dev.py run`，或按 [依赖说明中的替代调用](docs/dependencies.md#运行工具的已知限制) 通过 MCP 启动；运行后仍可使用 MCP 检查和截图。
+- 使用 `run_project` 时传入 `allow_window=true`；指定场景时增加 `scene_path`，省略时运行当前场景，没有打开场景时运行主场景。插件内部等待合适的启动时机，并清除上一轮探针状态；本地补丁见 [依赖说明](docs/dependencies.md#运行工具的本地补丁)。
 
 ## 目录
 

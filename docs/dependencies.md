@@ -39,23 +39,23 @@
 
 插件原生运行于 Godot 编辑器，项目配置使用 HTTP MCP。没有安装可选的 `gdmcp` CLI、聊天客户端、云服务或其他 MCP。
 
-本地补丁：`mcp_server_native.gd` 的 `_exit_tree()` 断开调试工具对服务器的反向引用，清空工具实例、移除引擎元数据并注销运行探针自动加载项。原版在导入退出时出现循环引用，报告 495 个实例和 10 个资源残留；补丁用于正常释放开发工具，避免关闭编辑器后留下探针，不修改工具功能。更新插件时应确认上游是否已修复再迁移补丁。
+本地补丁：`mcp_server_native.gd` 的 `_exit_tree()` 断开调试工具对服务器的反向引用，清空工具实例、移除引擎元数据并注销运行探针自动加载项。原版在导入退出时出现循环引用，报告 495 个实例和 10 个资源残留；补丁用于正常释放开发工具，避免关闭编辑器后留下探针。启动工具的补丁单独记录如下。更新插件时应确认上游是否已修复再迁移补丁，保留 MIT 许可证。
 
 模板默认工具：启动成功后，在上游 30 个核心工具之外启用 `get_class_api_metadata`、`get_scene_structure`、`get_editor_screenshot`、`get_runtime_scene_tree`、`inspect_runtime_node`、`simulate_runtime_input_event`、`get_runtime_screenshot`、`await_runtime_condition`，用于 API 查询、场景检查、输入和画面验证。其他高级工具仍按需启用。
 
 开发命令通过 `--mcp-server --mcp-port 9080` 启动插件；保持上游默认的本地访问设置。插件临时注册的 `MCPRuntimeProbe` 用于运行时调试；游戏交付前需停用插件并检查导出。
 
-### 运行工具的已知限制
+### 运行工具的本地补丁
 
-在 Godot 4.7.2 上，HTTP MCP 的 `run_project` 在处理延迟消息时直接启动场景，会触发 `Do not use progress dialog (task) while flushing the message queue or using call_deferred()!`。传入或省略 `scene_path` 都会出现；工具可能返回成功且游戏可以运行，但不能据此认定编辑器没有错误。目录迁移未修改这个上游实现。
+补丁文件：`addons/godot_mcp/tools/editor_tools_native.gd`，函数 `_tool_run_project()`。
 
-可以按 F5 运行主场景，或用 `python3 tools/dev.py run` 独立启动游戏。需要 MCP 运行时调试时，先确认 `get_project_info` 的项目路径，再通过 `execute_editor_script` 将启动安排到下一帧：
+HTTP MCP 请求来自 Godot 的延迟消息队列。直接调用编辑器的场景启动 API 会触发 `Do not use progress dialog (task) while flushing the message queue or using call_deferred()!`。工具内部现在先等待 `SceneTree.process_frame`，离开消息队列刷新阶段后再启动；指定场景、当前场景和主场景回退都经过这一处理。
 
-```gdscript
-get_tree().process_frame.connect(func(): EditorInterface.play_main_scene(), CONNECT_ONE_SHOT)
-```
+启动前同时调用调试桥已有的 `reset_probe_ready()`，清除上一轮运行留下的就绪标记，避免连续运行时将旧探针当作本轮启动完成。保留原有的调试会话与探针等待，以及场景不存在、项目已经运行时的错误返回。
 
-等待调试会话就绪后再读取运行时数据或截图。这个替代调用已实际运行并截图验证，编辑器输出没有上述错误；结束时使用 `stop_project`。截图参数使用 `save_path`，例如 `res://.godot/preview.png`。
+调用方式：先通过 `get_project_info` 确认项目路径，再调用 `run_project`，参数为 `{"allow_window": true}`；指定场景时增加 `"scene_path": "res://game/main/main.tscn"`。省略场景路径时优先运行当前场景，没有打开场景时运行主场景。使用运行时调试工具前确认返回的 `session_active` 和 `probe_ready`；结束时调用 `stop_project`。截图参数使用 `save_path`，例如 `res://.godot/preview.png`。
+
+回归入口为 `python3 tests/test_mcp_run_project.py`，需要图形环境和空闲的 9080 端口。脚本复制不含缓存的临时项目，使用独立项目名隔离插件用户配置，直接调用 MCP，并检查编辑器输出；任何 `ERROR:` 或 `SCRIPT ERROR:` 都会使检查失败。截图检查使用独立路径并拒绝过期缓存。主场景截图保存到当前仓库的 `.godot/mcp-run-project-preview.png`，临时项目在结束后删除。
 
 ## 更新
 
@@ -63,6 +63,7 @@ get_tree().process_frame.connect(func(): EditorInterface.play_main_scene(), CONN
 
 ```bash
 python3 tools/dev.py check
+python3 tests/test_mcp_run_project.py
 python3 tools/dev.py editor
 # 在另一个终端中
 python3 tools/dev.py mcp
@@ -80,8 +81,10 @@ python3 tools/dev.py capture
 - MCP 启动游戏后，模拟 D 键使玩家 x 从 160 移动至 280，模拟 R 键使其恢复至 160；运行时截图已生成并人工检查。
 - 编辑器关闭后没有引擎资源残留错误，`project.godot` 不保留运行探针自动加载项。
 
-同日目录迁移后复验：
+当前目录与启动补丁复验：
 
 - 主场景为 `res://game/main/main.tscn`；角色和收集物移入 `game/` 对应功能目录，保留原有脚本 UID。
 - 当前工作区和不包含 `.godot/` 的副本均通过资源导入与 9 项行为检查。
-- 命令行截图与 MCP 运行时截图均检查了中文 HUD、角色、障碍和五个晶体。MCP 使用上述下一帧启动方式，确认连接路径及新主场景，并完成运行、截图、停止与编辑器退出。
+- 主场景回退、当前场景和指定角色场景均通过直接 `run_project` 启动、重复启动拒绝与停止检查；当前场景和指定场景均通过新探针与非过期截图检查。
+- 不存在的场景返回明确错误，编辑器保持未运行状态；编辑器退出码为 0，日志无引擎错误，运行探针自动加载项已移除。
+- 在临时副本中移除帧等待后，相同回归检查捕获到原始进度对话框错误并失败，确认检查能够识别此次问题。
