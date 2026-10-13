@@ -36,12 +36,22 @@
 - 保留用户已有的未提交改动；不用 reset、clean 或覆盖无关文件换取干净工作区。
 
 ## Codex 与 Godot 2D 开发
-- 本仓库是 Godot 4.7 / GDScript 的 2D 游戏起点。先阅读 `README.md`，从一个可玩的核心循环开始；游戏逻辑放在 `scenes/`，同一功能的脚本和场景放在一起。
+- 本仓库是 Godot 4.7 / GDScript 的 2D 游戏起点。先阅读 `README.md` 和 `docs/README.md`，再阅读当前任务相关的设计文档，从一个可玩的核心循环开始。
 - `.agents/skills/` 包含项目级技能。按当前任务读取对应 `SKILL.md`，不一次加载全部技能。脚本用 `godot-gdscript`；场景用 `godot-nodes-scenes`；移动、物理、信号、UI、动画和测试分别使用同名专项。
 - 保留 `.tscn` 中可直接在编辑器查看的场景和 UI；优先使用 `CharacterBody2D`、`Area2D`、信号和少量明确的状态。不要为新原型预先添加全局事件总线、对象池或通用游戏框架。
 - 用 `python3 tools/dev.py editor` 启动编辑器和项目 MCP。MCP 连接后先调用 `get_project_info`，确认 `project_path` 是当前仓库，再操作场景或运行游戏；不可操作同一端口上的其他项目。
 - MCP 不在线时先运行 `python3 tools/dev.py mcp` 诊断。文件编辑和命令行验证可以继续；报告实际使用的路径，不把静态检查说成运行或视觉验证。
+- 当前 MCP 的 `run_project` 在 Godot 4.7.2 上存在调用时机问题；运行前阅读 `docs/dependencies.md` 的已知限制，采用已验证的替代方式，不把工具返回成功当作没有引擎错误。
 - 修改游戏行为后运行 `python3 tools/dev.py check`。修改布局、素材或动画后，运行游戏并通过 MCP 截图或 `python3 tools/dev.py capture` 检查画面。测试覆盖当前核心行为和关键失败路径。
 - `addons/godot_mcp/` 是固定版本的第三方工具，`.agents/skills/` 是第三方技能；更新需保留许可证并同步 `docs/dependencies.md`，日常功能开发不修改上游代码。项目约定优先于上游示例里的通用建议。
-- 主场景是 `scenes/main.tscn`。示例玩法仅用于验证模板，可替换；开发入口、技能、MCP 和第三方许可证可保留。
+- 主场景是 `game/main/main.tscn`。示例玩法仅用于验证模板，可替换；开发入口、技能、MCP 和第三方许可证可保留。
+
+## 目录与内容归属
+- `project.godot` 保留在仓库根目录，`res://` 指向仓库根。游戏场景、脚本和玩法资源统一放在 `game/`，按功能组织，同一功能的 `.tscn`、`.gd` 和专用 `.tres` 放在一起。
+- 角色放在 `game/characters/`，交互物体放在 `game/objects/`；关卡、UI、对话等目录在实际需要时建立。不要预建空系统或把共享代码堆进通用 `utils/`；出现明确复用需求后再提取。
+- 美术、音频和字体放在 `assets/`，内部保留功能归属，例如 `assets/characters/player/`。PSD、Aseprite、Blender 等制作原稿放在 `assets/source/`；该目录用 `.gdignore` 隔离，游戏引用应指向导出的运行时素材。
+- 新增外部素材时，将来源、作者、许可证和使用范围登记到 `assets/credits.md`。第三方插件与技能仍放在 `addons/` 和 `.agents/skills/`，保留上游许可证。
+- `docs/` 保存设计资料，`docs/design.md` 描述核心玩法与验收，`docs/art_direction.md` 描述视觉约定，`docs/narrative/` 保存世界观、人物和剧情设计。游戏实际读取的对话、任务等数据放在 `game/` 对应功能目录，不读取 `docs/`。
+- 根 `README.md` 负责运行和目录导航，`AGENTS.md` 负责开发约定，`docs/README.md` 负责文档索引，`docs/dependencies.md` 负责依赖版本和补丁。更新内容时维护对应文件，避免同一规则保存多份。
+- `tests/` 放行为测试，`tools/` 放开发工具。移动资源时一并保留 `.uid` 和 `.import` 元数据，更新场景入口、资源引用、测试与文档，再执行导入、行为和画面验证。
 

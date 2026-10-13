@@ -45,6 +45,18 @@
 
 开发命令通过 `--mcp-server --mcp-port 9080` 启动插件；保持上游默认的本地访问设置。插件临时注册的 `MCPRuntimeProbe` 用于运行时调试；游戏交付前需停用插件并检查导出。
 
+### 运行工具的已知限制
+
+在 Godot 4.7.2 上，HTTP MCP 的 `run_project` 在处理延迟消息时直接启动场景，会触发 `Do not use progress dialog (task) while flushing the message queue or using call_deferred()!`。传入或省略 `scene_path` 都会出现；工具可能返回成功且游戏可以运行，但不能据此认定编辑器没有错误。目录迁移未修改这个上游实现。
+
+可以按 F5 运行主场景，或用 `python3 tools/dev.py run` 独立启动游戏。需要 MCP 运行时调试时，先确认 `get_project_info` 的项目路径，再通过 `execute_editor_script` 将启动安排到下一帧：
+
+```gdscript
+get_tree().process_frame.connect(func(): EditorInterface.play_main_scene(), CONNECT_ONE_SHOT)
+```
+
+等待调试会话就绪后再读取运行时数据或截图。这个替代调用已实际运行并截图验证，编辑器输出没有上述错误；结束时使用 `stop_project`。截图参数使用 `save_path`，例如 `res://.godot/preview.png`。
+
 ## 更新
 
 更新前阅读上游变更和目标 Godot 版本，选择明确的发布版本或提交。替换对应第三方目录时保留许可证，更新本文中的版本记录，然后执行：
@@ -67,3 +79,9 @@ python3 tools/dev.py capture
 - Codex CLI 正确读取项目级 MCP 配置，HTTP 握手确认连接到本仓库，工具列表为 38 项。
 - MCP 启动游戏后，模拟 D 键使玩家 x 从 160 移动至 280，模拟 R 键使其恢复至 160；运行时截图已生成并人工检查。
 - 编辑器关闭后没有引擎资源残留错误，`project.godot` 不保留运行探针自动加载项。
+
+同日目录迁移后复验：
+
+- 主场景为 `res://game/main/main.tscn`；角色和收集物移入 `game/` 对应功能目录，保留原有脚本 UID。
+- 当前工作区和不包含 `.godot/` 的副本均通过资源导入与 9 项行为检查。
+- 命令行截图与 MCP 运行时截图均检查了中文 HUD、角色、障碍和五个晶体。MCP 使用上述下一帧启动方式，确认连接路径及新主场景，并完成运行、截图、停止与编辑器退出。

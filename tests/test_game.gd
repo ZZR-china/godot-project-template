@@ -9,7 +9,7 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	var packed: PackedScene = load("res://scenes/main.tscn")
+	var packed: PackedScene = load("res://game/main/main.tscn")
 	var game: StarterGame = packed.instantiate()
 	root.add_child(game)
 	current_scene = game

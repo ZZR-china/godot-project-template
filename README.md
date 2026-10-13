@@ -40,7 +40,7 @@ GODOT_BIN=/path/to/Godot python3 tools/dev.py editor
 
 > 用已有 2D 技能为游戏增加一个暂停菜单，支持键盘和手柄，保持 UI 在编辑器中可见。
 
-Codex 应先确认 Godot 版本和当前 MCP 连接的项目，再按任务读取对应技能，完成最小玩法、运行检查、查看画面。项目边界见 `AGENTS.md`；依赖版本与许可证见 [docs/dependencies.md](docs/dependencies.md)。
+Codex 应先确认 Godot 版本和当前 MCP 连接的项目，再按任务读取对应技能，完成最小玩法、运行检查、查看画面。项目边界见 `AGENTS.md`；设计资料从 [文档索引](docs/README.md) 开始，当前玩法见 [游戏设计](docs/design.md)，依赖版本与许可证见 [依赖说明](docs/dependencies.md)。
 
 ## 检查与截图
 
@@ -69,27 +69,42 @@ python3 tools/dev.py mcp
 - 插件使用本地用户数据保存面板配置。开启编辑器时会注册 `MCPRuntimeProbe` 自动加载项，用于运行时调试；正常关闭插件时会移除。它是开发工具，交付游戏前应停用插件并检查导出内容。
 - 当前会话不会因为修改配置就立即获得新的 MCP 工具。重新加载 Codex 后连接，或先用 `python3 tools/dev.py mcp` 验证服务。
 - 模板默认启用 30 个核心工具和 8 个画面／运行检查工具。运行和切换编辑器场景时，按工具 schema 传入 `allow_window=true` 或 `allow_ui_focus=true`；上游默认保留编辑器焦点，不擅自弹窗。
+- Godot 4.7.2 下，上游 `run_project` 会触发编辑器进度对话框错误。可使用 F5、`python3 tools/dev.py run`，或按 [依赖说明中的替代调用](docs/dependencies.md#运行工具的已知限制) 通过 MCP 启动；运行后仍可使用 MCP 检查和截图。
 
 ## 目录
 
 ```text
-project.godot              引擎配置、输入映射和主场景入口
-scenes/main.tscn           示例关卡与 HUD
-scenes/main.gd             得分、完成反馈与重开
-scenes/player/            可复用的角色场景与移动脚本
-scenes/pickup/            可复用的收集物场景与信号
-tests/test_game.gd        核心行为测试
-tools/dev.py              编辑器、运行、检查、截图和 MCP 诊断入口
-.agents/skills/           项目级 Godot 技能与参考资料
-.codex/config.toml        项目级 Codex MCP 配置
-addons/godot_mcp/         固定版本的第三方编辑器插件
-docs/dependencies.md      来源、版本和更新说明
+project.godot                    引擎配置、输入映射和主场景入口
+game/
+  main/                         示例关卡、HUD、得分和重开
+  characters/player/            角色场景与移动脚本
+  objects/pickup/               收集物场景与信号
+assets/
+  credits.md                    素材来源与许可证登记
+  source/.gdignore              制作原稿目录，排除 Godot 导入
+docs/
+  README.md                     设计资料索引
+  design.md                     核心玩法、范围与验收
+  art_direction.md              视觉约定
+  narrative/README.md           剧情设计的组织与使用方式
+  dependencies.md               工具来源、版本和补丁
+tests/test_game.gd              核心行为测试
+tools/dev.py                    编辑器、运行、检查、截图和 MCP 诊断入口
+.agents/skills/                 项目级 Godot 技能与参考资料
+.codex/config.toml              项目级 Codex MCP 配置
+addons/godot_mcp/               固定版本的第三方编辑器插件
 ```
 
-新增功能时，优先把它的脚本、场景和专用资源放在同一目录，例如 `scenes/enemy/`。需要共享素材时再建立 `assets/`。保留 Godot 生成的 `.uid` 与资源导入元数据；`.godot/` 缓存和导出产物不提交。
+仓库根目录同时是 Godot 工程根目录。`res://game/` 用于游戏内容，`res://assets/` 用于运行时素材；开发命令和 MCP 仍以仓库根目录为项目路径。
+
+`game/` 按功能组织场景、脚本和玩法资源。例如新增敌人时建立 `game/characters/enemies/`；敌人的场景、脚本和属性资源放在对应功能目录。需要关卡、独立菜单或对话时，再建立 `game/levels/`、`game/ui/` 或 `game/dialogue/`，无需提前创建空系统。
+
+素材按功能和用途存放，例如角色贴图放 `assets/characters/player/`，场景素材放 `assets/environments/`，界面素材放 `assets/ui/`，声音和字体放 `assets/audio/` 与 `assets/fonts/`。这些分类在有实际素材时建立；外部素材来源登记到 [素材记录](assets/credits.md)。制作原稿放 `assets/source/`，导出的 PNG、音频等放到游戏使用的素材目录。
+
+`docs/` 用于设计说明，游戏实际读取的对话、任务和配置数据放在 `game/` 对应功能下。文档、原稿和开发工具通过 `.gdignore` 减少 Godot 扫描；交付游戏时另行检查导出资源范围。保留 Godot 生成的 `.uid` 与资源导入元数据；`.godot/` 缓存和导出产物不提交。
 
 ## 用作新游戏模板
 
-复制仓库内容到新项目，保留 `.agents/`、`.codex/`、`AGENTS.md` 和第三方许可证；不复制 `.git/`、`.godot/` 或构建产物。在 `project.godot` 修改游戏名称，替换 `scenes/main.tscn` 及示例测试，然后运行检查。新项目沿用同一 MCP 端口，一次连接一个项目。
+复制仓库内容到新项目，保留 `.agents/`、`.codex/`、`AGENTS.md` 和第三方许可证；不复制 `.git/`、`.godot/` 或构建产物。在 `project.godot` 修改游戏名称，替换 `game/main/main.tscn` 及示例测试，并将 `docs/design.md` 更新为新游戏的目标，然后运行检查。新项目沿用同一 MCP 端口，一次连接一个项目。
 
 技能与 MCP 都来自超过 200 stars 的仓库，具体查询值和固定版本记录在依赖文档中。游戏代码与上游工具分开放置，替换示例时无需修改工具。
