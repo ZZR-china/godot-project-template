@@ -97,10 +97,20 @@ def editor_arguments():
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("command", choices=["editor", "run", "check", "capture", "mcp"])
-    parser.add_argument("--output", type=Path, default=ROOT / ".godot/preview.png",
-                        help="截图路径，默认 .godot/preview.png")
+    commands = parser.add_subparsers(dest="command", required=True)
+    for command in ["editor", "run", "check", "mcp"]:
+        commands.add_parser(command)
+    capture = commands.add_parser("capture", help="运行主场景并截图")
+    capture.add_argument("--output", type=Path, default=ROOT / ".godot/preview.png",
+                         help="截图路径，默认 .godot/preview.png")
+    initialize = commands.add_parser("init", help="从模板生成新游戏项目")
+    initialize.add_argument("--name", required=True, help="新游戏的显示名称")
+    initialize.add_argument("--output", type=Path, required=True, help="新的项目目录，位于模板目录之外")
     args = parser.parse_args()
+    if args.command == "init":
+        from init_game import init_game
+        init_game(args.name, args.output)
+        return
     if args.command == "mcp":
         try:
             check_mcp()

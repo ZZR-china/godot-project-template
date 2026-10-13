@@ -109,6 +109,17 @@ addons/godot_mcp/               固定版本的第三方编辑器插件
 
 ## 用作新游戏模板
 
-复制仓库内容到新项目，保留 `.agents/`、`.codex/`、`AGENTS.md` 和第三方许可证；不复制 `.git/`、`.godot/` 或构建产物。在 `project.godot` 修改游戏名称，替换 `game/main/main.tscn` 及示例测试，并将 `docs/design.md` 更新为新游戏的目标，然后运行检查。新项目沿用同一 MCP 端口，一次连接一个项目。
+在模板根目录生成新项目：
+
+```bash
+python3 tools/dev.py init --name "星海冒险" --output ../star-adventure
+cd ../star-adventure
+python3 tools/dev.py check
+python3 tools/dev.py editor
+```
+
+初始化只需要 Python，会修改新项目的显示名称，将收集玩法替换为标题占位场景和基础检查，并更新游戏设计资料。Codex 技能、MCP、开发工具和第三方许可证保留；原模板继续可用。输出目录必须位于模板之外且尚不存在，不复制 `.git/`、缓存或构建产物。完整说明见 [新游戏初始化](docs/new_game.md)。
+
+新项目沿用同一 MCP 端口，一次连接一个项目。需要保留收集示例时可直接复制仓库内容，保留 `.agents/`、`.codex/` 和许可证，不复制 `.git/`、`.godot/` 或构建产物。
 
 技能与 MCP 都来自超过 200 stars 的仓库，具体查询值和固定版本记录在依赖文档中。游戏代码与上游工具分开放置，替换示例时无需修改工具。

@@ -82,11 +82,13 @@ def verify(project):
                                capture_output=True, text=True, timeout=150)
         assert check.returncode == 0, check.stdout + check.stderr
         assert b"MCPRuntimeProbe" in (project / "project.godot").read_bytes(), check.stdout + check.stderr
-        print("编辑器在线时运行 check：9 项行为检查通过，探针配置保留", flush=True)
+        print("编辑器在线时运行 check 通过，探针配置保留", flush=True)
 
-        script_path = "res://game/characters/player/player.gd"
+        has_example = (project / "game/characters/player/player.gd").is_file()
+        script_path = "res://game/characters/player/player.gd" if has_example else "res://game/main/main.gd"
         script = call("read_script", {"script_path": script_path})["content"]
-        changed_script = script.replace("240.0", "260.0")
+        audit_script = script if has_example else script + "\n@export var audit_value: float = 240.0\n"
+        changed_script = audit_script.replace("240.0", "260.0")
         assert changed_script != script
         call("modify_script", {"script_path": script_path, "content": changed_script})
         assert call("read_script", {"script_path": script_path})["content"] == changed_script
@@ -97,8 +99,9 @@ def verify(project):
         cases = [
             ("未打开场景时运行主场景", {}, main_scene, "/root/Main"),
             ("运行当前场景", {}, main_scene, "/root/Main"),
-            ("运行指定角色场景", {"scene_path": "res://game/characters/player/player.tscn"},
-             "res://game/characters/player/player.tscn", "/root/Player"),
+            ("运行指定场景", {"scene_path": "res://game/characters/player/player.tscn" if has_example else main_scene},
+             "res://game/characters/player/player.tscn" if has_example else main_scene,
+             "/root/Player" if has_example else "/root/Main"),
         ]
         for index, (label, arguments, scene, runtime_root) in enumerate(cases):
             if index == 1:
@@ -112,10 +115,10 @@ def verify(project):
             assert result["status"] == "success" and result["scene"] == scene, result
             assert result["session_active"] and result["probe_ready"], result
             call("run_project", {"allow_window": True}, expected_error="Project is already running")
-            player_path = runtime_root + "/Player" if index < 2 else runtime_root
+            player_path = runtime_root + "/Player" if has_example and index < 2 else runtime_root
             player = call("inspect_runtime_node", {"node_path": player_path, "timeout_ms": 5000})
-            assert player["properties"]["speed"] == 260.0, player
-            if index == 0:
+            assert player["properties"]["speed" if has_example else "audit_value"] == 260.0, player
+            if index == 0 and has_example:
                 event = {"type": "key", "keycode": 68, "physical_keycode": 68, "pressed": True}
                 call("simulate_runtime_input_event", {"event": event})
                 moved = call("await_runtime_condition", {
@@ -123,6 +126,7 @@ def verify(project):
                 })
                 call("simulate_runtime_input_event", {"event": {**event, "pressed": False}})
                 assert moved["condition_met"], moved
+            if index == 0:
                 call("await_runtime_condition", {"expression": "false", "timeout_ms": 200,
                                                    "poll_interval_ms": 50},
                      expected_error="Timeout waiting for runtime condition")

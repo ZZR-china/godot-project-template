@@ -48,6 +48,7 @@
 - MCP 编辑场景后先调用 `save_scene`，命令行检查只读取已保存文件。截图结果带 `stale` 标记时不能作为当前画面的验证依据。
 - 修改开发工具、MCP 集成或更新插件后运行 `python3 tests/test_mcp_run_project.py`；该检查使用临时项目和独立端口，不需要关闭当前编辑器，需要图形环境。
 - 主场景是 `game/main/main.tscn`。示例玩法仅用于验证模板，可替换；开发入口、技能、MCP 和第三方许可证可保留。
+- 创建新游戏用 `python3 tools/dev.py init --name "游戏名" --output ../新目录`，用法见 `docs/new_game.md`。修改初始化工具后运行 `python3 tests/test_init_game.py`，在临时项目中验证文件保留、场景检查、截图与 MCP。
 
 ## 目录与内容归属
 - `project.godot` 保留在仓库根目录，`res://` 指向仓库根。游戏场景、脚本和玩法资源统一放在 `game/`，按功能组织，同一功能的 `.tscn`、`.gd` 和专用 `.tres` 放在一起。
